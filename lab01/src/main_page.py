@@ -253,7 +253,7 @@ class MainPage(QWidget):
         # print(f'a1 = {a1}, b1 = {b1}, a2 = {a2}, b2 = {b2}, step = {step}, msg = {msg_amount}')
 
         self.system = System(a1, b1, a2, b2, msg_amount, model_time)
-        avg_time_in_system, i1_actual, i2_actual = self.system.delta_t()
+        avg_time_in_system, i1_actual, i2_actual = self.system.event_driven()
         # eventful_max_length = self.system.event_driven()
 
         self.avg_time_in_system.setText("{:.2f}".format(avg_time_in_system))
@@ -314,11 +314,11 @@ class MainPage(QWidget):
                 self.__error_msg('Параметры a и b - вещественные числа, причём a < b !')
                 return
 
-        i1_range = np.arange(0.1, 50, 0.1)
+        i1_range = np.arange(0.1, i2 - 0.1, 0.1)
         avg_times = []
         for i1 in i1_range:
             self.system = System(1 / i1, 1 / i1, a2, b2, msg_amount, model_time)
-            avg_time_in_system, _, _ = self.system.delta_t()
+            avg_time_in_system, _, _ = self.system.event_driven()
             avg_times.append(avg_time_in_system)
 
         plt.plot(i1_range, avg_times)
@@ -396,11 +396,11 @@ class MainPage(QWidget):
                 self.__error_msg('Параметры a и b - вещественные числа, причём a < b !')
                 return
 
-        i2_range = np.arange(0.1, 50, 0.1)
+        i2_range = np.arange(i1, 50, 0.1)
         avg_times = []
         for i2 in i2_range:
             self.system = System(a1, b1, 1 / i2, 1 / i2, msg_amount, model_time)
-            avg_time_in_system, _, _ = self.system.delta_t()
+            avg_time_in_system, _, _ = self.system.event_driven()
             avg_times.append(avg_time_in_system)
 
         plt.plot(i2_range, avg_times)
@@ -424,13 +424,26 @@ class MainPage(QWidget):
             self.__error_msg('Количество заявок должно быть целым положительным числом!')
             return
 
-        load_range = np.arange(0.001, 1.1, 0.005)
+        load_range = np.arange(0.3, 0.99, 0.005)
         avg_times = []
         i2 = 10
+        d1 = 0.1
+        d2 = 0.1
+        a2 = 1 / i2 -d2
+        b2 = 1 / i2 +d2
+        times = 5
+        tmp = []
         for load in load_range:
             i1 = i2 * load
-            self.system = System(1 / i1, 1 / i1, 1 / i2, 1 / i2, msg_amount, model_time)
-            avg_time_in_system, _, _ = self.system.delta_t()
+            a1 = 1 / i1 - d1
+            b1 = 1 / i2 + d1
+            for i in range(times):
+                self.system = System(a1, b1, a2, b2, msg_amount, model_time)
+                avg, _, _ = self.system.event_driven()
+                tmp.append(avg)
+            avg_time_in_system = sum(tmp) / len(tmp)
+
+            print(i1, i2, 1/i1, 1/i2, avg_time_in_system)
             avg_times.append(avg_time_in_system)
 
         plt.plot(load_range, avg_times)
